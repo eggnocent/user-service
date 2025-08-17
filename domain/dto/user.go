@@ -26,7 +26,7 @@ type RegisterRequest struct {
 	Password        string `json:"password" validate:"required"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required"`
 	Email           string `json:"email" validate:"required"`
-	Phone           string `json:"phone" validate:"required"`
+	PhoneNumber     string `json:"phone" validate:"required"`
 	RoleID          uint
 }
 
