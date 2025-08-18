@@ -20,9 +20,10 @@ type UserService struct {
 
 type IUserService interface {
 	Login(context.Context, *dto.LoginRequest) (*dto.LoginResponse, error)
-	Register(context.Context, *dto.RegisterRequest) (*dto.LoginResponse, error)
+	Register(context.Context, *dto.RegisterRequest) (*dto.RegisterResponse, error)
 	Update(context.Context, *dto.UpdateRequest, string) (*dto.UserResponse, error)
 	GetUserLogin(ctx context.Context) (*dto.UserResponse, error)
+	GetUserByUUD(ctx context.Context, uuid string) (*dto.UserResponse, error)
 }
 
 type Claims struct {
@@ -215,6 +216,41 @@ func (u *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid s
 		Username:    userResult.Username,
 		PhoneNumber: userResult.PhoneNumber,
 		Email:       userResult.Email,
+	}
+
+	return &data, nil
+}
+
+func (u *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, error) {
+	var (
+		userLogin = ctx.Value(constants.UserLogin).(*dto.UserResponse)
+		data      dto.UserResponse
+	)
+
+	data = dto.UserResponse{
+		UUID:        userLogin.UUID,
+		Name:        userLogin.Name,
+		Username:    userLogin.Username,
+		PhoneNumber: userLogin.PhoneNumber,
+		Email:       userLogin.Email,
+		Role:        userLogin.Role,
+	}
+
+	return &data, nil
+}
+
+func (u *UserService) GetUserByUUD(ctx context.Context, uuid string) (*dto.UserResponse, error) {
+	user, err := u.repository.GetUser().FindByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	data := dto.UserResponse{
+		UUID:        user.UUID,
+		Name:        user.Name,
+		Username:    user.Username,
+		PhoneNumber: user.PhoneNumber,
+		Email:       user.Email,
 	}
 
 	return &data, nil
