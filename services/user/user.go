@@ -10,6 +10,7 @@ import (
 	"user-service/constants"
 	errConstant "user-service/constants/error"
 	"user-service/domain/dto"
+	"user-service/domain/models"
 	"user-service/repositories"
 )
 
@@ -142,4 +143,79 @@ func (u *UserService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	}
 
 	return response, nil
+}
+
+func (u *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid string) (*dto.UserResponse, error) {
+	var (
+		password                  string
+		checkUsername, checkEmail *models.User
+		hashPassword              []byte
+		user, userResult          *models.User
+		err                       error
+		data                      dto.UserResponse
+	)
+
+	user, err = u.repository.GetUser().FindByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	isUsernameExist := u.isUsernameExist(ctx, req.Username)
+	if isUsernameExist && user.Username != req.Username {
+		checkUsername, err = u.repository.GetUser().FindByUsername(ctx, req.Username)
+		if err != nil {
+			return nil, err
+		}
+
+		if checkUsername != nil {
+			return nil, errConstant.ErrUsernameExist
+		}
+	}
+
+	isEmailExist := u.isEmailExist(ctx, req.Email)
+	if isEmailExist && user.Email != req.Email {
+		checkEmail, err = u.repository.GetUser().FindByEmail(ctx, req.Email)
+		if err != nil {
+			return nil, err
+		}
+
+		if checkEmail != nil {
+			return nil, errConstant.ErrEmailExist
+		}
+	}
+
+	if req.Password != nil {
+		if *req.Password != *req.ConfirmPassword {
+			return nil, errConstant.ErrPasswordDoesNotMatch
+		}
+
+		hashPassword, err = bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+
+		password = string(hashPassword)
+	}
+
+	userResult, err = u.repository.GetUser().Update(ctx, &dto.UpdateRequest{
+		Name:     req.Name,
+		Username: req.Username,
+		Password: &password,
+		Email:    req.Email,
+		Phone:    req.Phone,
+	}, uuid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	data = dto.UserResponse{
+		UUID:        userResult.UUID,
+		Name:        userResult.Name,
+		Username:    userResult.Username,
+		PhoneNumber: userResult.PhoneNumber,
+		Email:       userResult.Email,
+	}
+
+	return &data, nil
 }
