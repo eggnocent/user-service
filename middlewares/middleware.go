@@ -26,7 +26,7 @@ func HandlePanic() gin.HandlerFunc {
 				logrus.Errorf("Recovered from panic: %v", r)
 				c.JSON(http.StatusInternalServerError, response.Response{
 					Status:  constants.Error,
-					Message: errConstant.ErrInternalServerError,
+					Message: errConstant.ErrInternalServerError.Error(),
 				})
 				c.Abort()
 			}
@@ -45,32 +45,29 @@ func RateLimiter(lmt *limiter.Limiter) gin.HandlerFunc {
 			})
 			c.Abort()
 		}
-
 		c.Next()
 	}
 }
 
 func extractBearerToken(token string) string {
 	arrayToken := strings.Split(token, " ")
-	if len(arrayToken) != 2 {
+	if len(arrayToken) == 2 {
 		return arrayToken[1]
 	}
-
 	return ""
 }
 
-func responseUnauthorized(ctx *gin.Context, message string) {
-	ctx.JSON(http.StatusUnauthorized, response.Response{
+func responseUnauthorized(c *gin.Context, message string) {
+	c.JSON(http.StatusUnauthorized, response.Response{
 		Status:  constants.Error,
 		Message: message,
 	})
-
-	ctx.Abort()
+	c.Abort()
 }
 
-func validateAPIKEY(c *gin.Context) error {
+func validateAPIKey(c *gin.Context) error {
 	apiKey := c.GetHeader(constants.XApiKey)
-	requestAt := c.Request.Header.Get(constants.XRequestAt)
+	requestAt := c.GetHeader(constants.XRequestAt)
 	serviceName := c.GetHeader(constants.XServiceName)
 	signatureKey := config.Config.SignatureKey
 
@@ -82,12 +79,11 @@ func validateAPIKEY(c *gin.Context) error {
 	if apiKey != resultHash {
 		return errConstant.ErrUnauthorized
 	}
-
 	return nil
 }
 
 func validateBearerToken(c *gin.Context, token string) error {
-	if !strings.HasPrefix(token, "Bearer ") {
+	if !strings.Contains(token, "Bearer") {
 		return errConstant.ErrUnauthorized
 	}
 
@@ -114,7 +110,6 @@ func validateBearerToken(c *gin.Context, token string) error {
 	userLogin := c.Request.WithContext(context.WithValue(c.Request.Context(), constants.UserLogin, claims.User))
 	c.Request = userLogin
 	c.Set(constants.Token, token)
-
 	return nil
 }
 
@@ -133,7 +128,7 @@ func Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		err = validateAPIKEY(c)
+		err = validateAPIKey(c)
 		if err != nil {
 			responseUnauthorized(c, err.Error())
 			return

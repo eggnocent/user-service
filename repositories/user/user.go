@@ -3,12 +3,13 @@ package repositories
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 	errWrap "user-service/common/error"
 	errConstant "user-service/constants/error"
 	"user-service/domain/dto"
 	"user-service/domain/models"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type UserRepository struct {
@@ -50,8 +51,8 @@ func (r *UserRepository) Update(ctx context.Context, req *dto.UpdateRequest, uui
 	user := models.User{
 		Name:        req.Name,
 		Username:    req.Username,
-		Password:    req.Password,
-		PhoneNumber: req.Phone,
+		Password:    *req.Password,
+		PhoneNumber: req.PhoneNumber,
 		Email:       req.Email,
 	}
 

@@ -1,19 +1,21 @@
 package util
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os"
 	"reflect"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 )
 
 func BindFromJSON(dest any, filename, path string) error {
 	v := viper.New()
 
-	v.SetConfigFile("json")
+	v.SetConfigType("json")             // Ini untuk parsing format JSON
+	v.SetConfigName(stripExt(filename)) // Ambil nama tanpa .json
 	v.AddConfigPath(path)
-	v.SetConfigName(filename)
 
 	err := v.ReadInConfig()
 	if err != nil {
@@ -27,6 +29,13 @@ func BindFromJSON(dest any, filename, path string) error {
 	}
 
 	return nil
+}
+
+func stripExt(file string) string {
+	if len(file) > 5 && file[len(file)-5:] == ".json" {
+		return file[:len(file)-5]
+	}
+	return file
 }
 
 func SetEnvFromConsulKV(v *viper.Viper) error {
@@ -57,8 +66,6 @@ func SetEnvFromConsulKV(v *viper.Viper) error {
 			val = strconv.Itoa(int(valOf.Float()))
 		case reflect.Bool:
 			val = strconv.FormatBool(valOf.Bool())
-		default:
-			panic("Unsupported type")
 		}
 
 		err = os.Setenv(k, val)
@@ -74,7 +81,7 @@ func SetEnvFromConsulKV(v *viper.Viper) error {
 func BindFromConsul(dest any, endPoint, path string) error {
 	v := viper.New()
 	v.SetConfigType("json")
-	err := v.AddRemoteProvider("consol", endPoint, path)
+	err := v.AddRemoteProvider("consul", endPoint, path)
 	if err != nil {
 		logrus.Errorf("add remote provider fail, err:%v", err)
 		return err

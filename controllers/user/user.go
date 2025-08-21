@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	errWrap "user-service/common/error"
 	"user-service/common/response"
@@ -65,10 +66,10 @@ func (u *UserController) Login(ctx *gin.Context) {
 	}
 
 	response.HttpResponse(response.ParamHTTPResp{
-		Code:  http.StatusOK,
-		Data:  user,
-		Token: &user.Token,
-		Gin:   ctx,
+		Code: http.StatusOK,
+		Data: user,
+		//Token: &user.Token,
+		Gin: ctx,
 	})
 }
 
@@ -164,8 +165,12 @@ func (u *UserController) Update(ctx *gin.Context) {
 }
 
 func (u *UserController) GetUserLogin(ctx *gin.Context) {
+	logrus.Info("🔐 [GET] /api/v1/auth/user - accessing GetUserLogin controller")
+
 	user, err := u.service.GetUser().GetUserLogin(ctx.Request.Context())
 	if err != nil {
+		logrus.Errorf("❌ failed to retrieve logged in user from context: %v", err)
+
 		response.HttpResponse(response.ParamHTTPResp{
 			Code: http.StatusBadRequest,
 			Err:  err,
@@ -173,6 +178,8 @@ func (u *UserController) GetUserLogin(ctx *gin.Context) {
 		})
 		return
 	}
+
+	logrus.Infof("✅ successfully retrieved logged in user: username=%s, uuid=%s", user.Username, user.UUID.String())
 
 	response.HttpResponse(response.ParamHTTPResp{
 		Code: http.StatusOK,

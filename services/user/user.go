@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 	"user-service/config"
@@ -12,6 +12,9 @@ import (
 	"user-service/domain/dto"
 	"user-service/domain/models"
 	"user-service/repositories"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -122,11 +125,12 @@ func (u *UserService) Register(ctx context.Context, req *dto.RegisterRequest) (*
 	}
 
 	user, err := u.repository.GetUser().Register(ctx, &dto.RegisterRequest{
-		Name:     req.Name,
-		Username: req.Username,
-		Password: string(hashPassword),
-		Email:    req.Email,
-		RoleID:   constants.Customer,
+		Name:        req.Name,
+		Username:    req.Username,
+		Password:    string(hashPassword),
+		PhoneNumber: req.PhoneNumber,
+		Email:       req.Email,
+		RoleID:      uint(constants.Customer),
 	})
 
 	if err != nil {
@@ -199,11 +203,11 @@ func (u *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid s
 	}
 
 	userResult, err = u.repository.GetUser().Update(ctx, &dto.UpdateRequest{
-		Name:     req.Name,
-		Username: req.Username,
-		Password: &password,
-		Email:    req.Email,
-		Phone:    req.Phone,
+		Name:        req.Name,
+		Username:    req.Username,
+		Password:    &password,
+		Email:       req.Email,
+		PhoneNumber: req.PhoneNumber,
 	}, uuid)
 
 	if err != nil {
@@ -222,12 +226,23 @@ func (u *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid s
 }
 
 func (u *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, error) {
-	var (
-		userLogin = ctx.Value(constants.UserLogin).(*dto.UserResponse)
-		data      dto.UserResponse
-	)
+	logrus.Info("📦 UserService.GetUserLogin called")
 
-	data = dto.UserResponse{
+	userRaw := ctx.Value(constants.UserLogin)
+	if userRaw == nil {
+		logrus.Warn("⚠️ no user found in context (possible missing/misconfigured middleware)")
+		return nil, fmt.Errorf("user not authenticated")
+	}
+
+	userLogin, ok := userRaw.(*dto.UserResponse)
+	if !ok {
+		logrus.Error("🔴 failed to cast context value to *dto.UserResponse")
+		return nil, fmt.Errorf("invalid user data")
+	}
+
+	logrus.Infof("🔍 user found in context: uuid=%s, username=%s, role=%s", userLogin.UUID.String(), userLogin.Username, userLogin.Role)
+
+	data := dto.UserResponse{
 		UUID:        userLogin.UUID,
 		Name:        userLogin.Name,
 		Username:    userLogin.Username,
