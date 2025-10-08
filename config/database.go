@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"net/url"
 	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func InitDatabase() (*gorm.DB, error) {
@@ -18,6 +19,8 @@ func InitDatabase() (*gorm.DB, error) {
 		config.Database.Port,
 		config.Database.Name,
 	)
+
+	fmt.Printf("Connecting to database at %s:%d\n", config.Database.Host, config.Database.Port)
 
 	db, err := gorm.Open(postgres.Open(uri), &gorm.Config{})
 	if err != nil {

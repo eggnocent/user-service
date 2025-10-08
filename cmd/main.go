@@ -15,6 +15,9 @@ import (
 	"user-service/routes"
 	"user-service/services"
 
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/limiter"
+	gincors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -67,20 +70,33 @@ var command = &cobra.Command{
 			})
 		})
 
-		router.Use(func(c *gin.Context) {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT")
-			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-service-name, x-api-key, x-request-at")
-			c.Next()
-		})
+		// router.Use(func(c *gin.Context) {
+		// 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		// 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
+		// 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-service-name, x-api-key, x-request-at")
+		// 	if c.Request.Method == "OPTIONS" {
+		// 		c.AbortWithStatus(http.StatusNoContent)
+		// 		return
+		// 	}
+		// 	c.Next()
+		// })
 
-		// lmt := tollbooth.NewLimiter(
-		// 	config.Config.RateLimiterMaxRequests,
-		// 	&limiter.ExpirableOptions{
-		// 		DefaultExpirationTTL: time.Duration(config.Config.RateLimiterTimeSeconds) * time.Second,
-		// 	})
+		router.Use(gincors.New(gincors.Config{
+			AllowOrigins:     []string{"http://localhost:3000"}, // ganti sesuai kebutuhan
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Content-Type", "Authorization", "x-service-name", "x-api-key", "x-request-at"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true, // sesuaikan
+			MaxAge:           12 * time.Hour,
+		}))
 
-		// router.Use(middlewares.RateLimiter(lmt))
+		lmt := tollbooth.NewLimiter(
+			config.Config.RateLimiterMaxRequests,
+			&limiter.ExpirableOptions{
+				DefaultExpirationTTL: time.Duration(config.Config.RateLimiterTimeSeconds) * time.Second,
+			})
+
+		router.Use(middlewares.RateLimiter(lmt))
 
 		group := router.Group("/api/v1")
 		route := routes.NewRouteRegistry(controller, group)
