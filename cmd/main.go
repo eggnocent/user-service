@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 	"user-service/common/response"
@@ -89,6 +90,8 @@ var command = &cobra.Command{
 			AllowCredentials: true, // sesuaikan
 			MaxAge:           12 * time.Hour,
 		}))
+
+		log.Println("ey")
 
 		lmt := tollbooth.NewLimiter(
 			config.Config.RateLimiterMaxRequests,
