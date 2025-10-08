@@ -16,6 +16,8 @@ import (
 	"user-service/routes"
 	"user-service/services"
 
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/limiter"
 	gincors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -91,13 +93,13 @@ var command = &cobra.Command{
 
 		log.Println("ey")
 
-		// lmt := tollbooth.NewLimiter(
-		// 	config.Config.RateLimiterMaxRequests,
-		// 	&limiter.ExpirableOptions{
-		// 		DefaultExpirationTTL: time.Duration(config.Config.RateLimiterTimeSeconds) * time.Second,
-		// 	})
+		lmt := tollbooth.NewLimiter(
+			config.Config.RateLimiterMaxRequests,
+			&limiter.ExpirableOptions{
+				DefaultExpirationTTL: time.Duration(config.Config.RateLimiterTimeSeconds) * time.Second,
+			})
 
-		// router.Use(middlewares.RateLimiter(lmt))
+		router.Use(middlewares.RateLimiter(lmt))
 
 		group := router.Group("/api/v1")
 		route := routes.NewRouteRegistry(controller, group)
