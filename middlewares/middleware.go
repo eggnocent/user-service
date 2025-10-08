@@ -13,8 +13,6 @@ import (
 	errConstant "user-service/constants/error"
 	services "user-service/services/user"
 
-	"github.com/didip/tollbooth"
-	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
@@ -36,19 +34,19 @@ func HandlePanic() gin.HandlerFunc {
 	}
 }
 
-func RateLimiter(lmt *limiter.Limiter) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		err := tollbooth.LimitByRequest(lmt, c.Writer, c.Request)
-		if err != nil {
-			c.JSON(http.StatusTooManyRequests, response.Response{
-				Status:  constants.Error,
-				Message: errConstant.ErrToManyRequests.Error(),
-			})
-			c.Abort()
-		}
-		c.Next()
-	}
-}
+// func RateLimiter(lmt *limiter.Limiter) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		err := tollbooth.LimitByRequest(lmt, c.Writer, c.Request)
+// 		if err != nil {
+// 			c.JSON(http.StatusTooManyRequests, response.Response{
+// 				Status:  constants.Error,
+// 				Message: errConstant.ErrToManyRequests.Error(),
+// 			})
+// 			c.Abort()
+// 		}
+// 		c.Next()
+// 	}
+// }
 
 func extractBearerToken(token string) string {
 	arrayToken := strings.Split(token, " ")
