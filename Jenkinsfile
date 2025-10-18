@@ -123,8 +123,8 @@ pipeline {
             withCredentials([
                 string(credentialsId: 'consul-http-token', variable: 'CONSUL_HTTP_TOKEN'),
                 string(credentialsId: 'consul-http-url', variable: 'CONSUL_HTTP_URL'),
-                usernamePassword(credentialsId: 'ssh-app-server', usernameVariable: 'USERNAME', passwordVariable: 'SSH_KEY'),
-                string(credentialsId: 'app-server-host', variable: 'HOST')
+                usernamePassword(credentialsId: 'ssh-key', usernameVariable: 'USERNAME', passwordVariable: 'SSH_KEY'),
+                string(credentialsId: 'host', variable: 'HOST')
             ]) {
                 def targetDir = "/home/\${USERNAME}/mini-soccer-project/user-service"
                 def targetBranch = env.TARGET_BRANCH ?: 'master'
