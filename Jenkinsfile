@@ -123,10 +123,10 @@ pipeline {
             withCredentials([
                 string(credentialsId: 'consul-http-token', variable: 'CONSUL_HTTP_TOKEN'),
                 string(credentialsId: 'consul-http-url', variable: 'CONSUL_HTTP_URL'),
-                usernamePassword(credentialsId: 'ssh-key', usernameVariable: 'USERNAME', passwordVariable: 'SSH_KEY'),
+                string(credentialsId: 'ssh-key', variable: 'SSH_KEY'),
+                string(credentialsId: 'username', variable: 'USERNAME'),
                 string(credentialsId: 'host', variable: 'HOST')
             ]) {
-                def targetDir = "/home/\${USERNAME}/mini-soccer-project/user-service"
                 def targetBranch = env.TARGET_BRANCH ?: 'master'
                 def consulWatchInterval = env.CONSUL_WATCH_INTERVAL_SECONDS ?: '60'
                 
@@ -136,16 +136,11 @@ pipeline {
                     echo "$SSH_KEY" > "$SSH_KEY_FILE"
                     chmod 600 "$SSH_KEY_FILE"
                     
-                    # Export variables untuk digunakan di remote server
-                    export TARGET_DIR="''' + targetDir + '''"
-                    export TARGET_BRANCH="''' + targetBranch + '''"
-                    export CONSUL_WATCH_INTERVAL="''' + consulWatchInterval + '''"
-                    
                     # SSH ke remote server
                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${USERNAME}@${HOST} bash << 'ENDSSH'
                         set -e  # Exit on error
                         
-                        TARGET_DIR="/home/$USER/mini-soccer-project/user-service"
+                        TARGET_DIR="/home/${USERNAME}/mini-soccer-project/user-service"
                         
                         if [ -d "$TARGET_DIR/.git" ]; then
                             echo "Directory exists. Pulling latest changes."
