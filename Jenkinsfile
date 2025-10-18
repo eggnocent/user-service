@@ -131,67 +131,69 @@ pipeline {
                 def consulWatchInterval = env.CONSUL_WATCH_INTERVAL_SECONDS ?: '60'
                 
                 sh '''
-                    set -e
-                    
-                    # Buat temporary file untuk SSH key dengan proper format
-                    SSH_KEY_FILE=$(mktemp)
-                    
-                    # Write SSH key dengan memastikan newline ter-preserve
-                    cat > "$SSH_KEY_FILE" << 'EOF'
+    set -e
+    
+    # Buat temporary file untuk SSH key
+    SSH_KEY_FILE=$(mktemp)
+    
+    # PERBAIKAN: Gunakan EOF tanpa quotes agar variable ter-expand
+    cat > "$SSH_KEY_FILE" <<EOF
 $SSH_KEY
 EOF
-                    
-                    # Set permission yang benar
-                    chmod 600 "$SSH_KEY_FILE"
-                    
-                    # Debug: Cek format key (hapus setelah berhasil)
-                    echo "SSH Key file created at: $SSH_KEY_FILE"
-                    head -n 1 "$SSH_KEY_FILE"
-                    tail -n 1 "$SSH_KEY_FILE"
-                    
-                    # SSH ke remote server
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${USERNAME}@${HOST} bash << 'ENDSSH'
-                        set -e
-                        
-                        TARGET_DIR="/home/${USERNAME}/mini-soccer-project/user-service"
-                        
-                        if [ -d "$TARGET_DIR/.git" ]; then
-                            echo "Directory exists. Pulling latest changes."
-                            cd "$TARGET_DIR"
-                            git pull origin "''' + targetBranch + '''"
-                        else
-                            echo "Directory does not exist. Cloning repository."
-                            mkdir -p "$(dirname "$TARGET_DIR")"
-                            git clone -b "''' + targetBranch + '''" https://github.com/eggnocent/user-service.git "$TARGET_DIR"
-                            cd "$TARGET_DIR"
-                        fi
-                        
-                        # Setup .env file
-                        if [ -f .env.example ]; then
-                            cp .env.example .env
-                        else
-                            touch .env
-                        fi
-                        
-                        # Update .env configurations
-                        sed -i "s|^TIMEZONE=.*|TIMEZONE=Asia/Jakarta|" .env
-                        sed -i "s|^CONSUL_HTTP_URL=.*|CONSUL_HTTP_URL=${CONSUL_HTTP_URL}|" .env
-                        sed -i "s|^CONSUL_HTTP_PATH=.*|CONSUL_HTTP_PATH=backend/user-service|" .env
-                        sed -i "s|^CONSUL_HTTP_TOKEN=.*|CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}|" .env
-                        sed -i "s|^CONSUL_WATCH_INTERVAL_SECONDS=.*|CONSUL_WATCH_INTERVAL_SECONDS=''' + consulWatchInterval + '''|" .env
-                        
-                        # Deploy with Docker Compose
-                        echo "Deploying with Docker Compose..."
-                        sudo docker compose up -d --build --force-recreate
-                        
-                        echo "Deployment completed successfully!"
+    
+    # Set permission
+    chmod 600 "$SSH_KEY_FILE"
+    
+    # Debug (opsional, bisa dihapus nanti)
+    echo "SSH Key file created at: $SSH_KEY_FILE"
+    echo "First line of key:"
+    head -n 1 "$SSH_KEY_FILE"
+    echo "Last line of key:"
+    tail -n 1 "$SSH_KEY_FILE"
+    
+    # SSH ke remote server
+    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${USERNAME}@${HOST} bash <<'ENDSSH'
+        set -e
+        
+        TARGET_DIR="/home/${USERNAME}/mini-soccer-project/user-service"
+        
+        if [ -d "$TARGET_DIR/.git" ]; then
+            echo "Directory exists. Pulling latest changes."
+            cd "$TARGET_DIR"
+            git pull origin "''' + targetBranch + '''"
+        else
+            echo "Directory does not exist. Cloning repository."
+            mkdir -p "$(dirname "$TARGET_DIR")"
+            git clone -b "''' + targetBranch + '''" https://github.com/eggnocent/user-service.git "$TARGET_DIR"
+            cd "$TARGET_DIR"
+        fi
+        
+        # Setup .env file
+        if [ -f .env.example ]; then
+            cp .env.example .env
+        else
+            touch .env
+        fi
+        
+        # Update .env configurations
+        sed -i "s|^TIMEZONE=.*|TIMEZONE=Asia/Jakarta|" .env
+        sed -i "s|^CONSUL_HTTP_URL=.*|CONSUL_HTTP_URL=${CONSUL_HTTP_URL}|" .env
+        sed -i "s|^CONSUL_HTTP_PATH=.*|CONSUL_HTTP_PATH=backend/user-service|" .env
+        sed -i "s|^CONSUL_HTTP_TOKEN=.*|CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}|" .env
+        sed -i "s|^CONSUL_WATCH_INTERVAL_SECONDS=.*|CONSUL_WATCH_INTERVAL_SECONDS=''' + consulWatchInterval + '''|" .env
+        
+        # Deploy with Docker Compose
+        echo "Deploying with Docker Compose..."
+        sudo docker compose up -d --build --force-recreate
+        
+        echo "Deployment completed successfully!"
 ENDSSH
-                    
-                    # Cleanup
-                    rm -f "$SSH_KEY_FILE"
-                    
-                    echo "Remote deployment finished."
-                '''
+    
+    # Cleanup
+    rm -f "$SSH_KEY_FILE"
+    
+    echo "Remote deployment finished."
+'''
             }
         }
     }
