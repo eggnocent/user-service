@@ -11,7 +11,7 @@ pipeline {
     CONSUL_HTTP_URL = credentials('consul-http-url')
     CONSUL_HTTP_KEY = "backend/user-service"
     CONSUL_HTTP_TOKEN = credentials('consul-http-token')
-    CONSUL_WATCH_INTERVAL_SECONDS = credential('consul-watch-interval-second')
+    CONSUL_WATCH_INTERVAL_SECONDS = 60
   }
 
   stages {
@@ -120,7 +120,7 @@ pipeline {
     stage('Deploy to Remote Server') {
       steps {
         script {
-          def targetDir = "/home/faisalilhami/mini-soccer-project/user-service"
+          def targetDir = "/home/eggnocent/mini-soccer-project/user-service"
           def sshCommandToServer = """
           ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${USERNAME}@${HOST} '
             if [ -d "${targetDir}/.git" ]; then
