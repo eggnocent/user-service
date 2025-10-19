@@ -8,9 +8,3 @@ services:
       - "8001:8001" # change this to your port
     env_file:
       - .env
-    networks:
-      - local-network
-
-networks:
-  local-network:
-    external: true
