@@ -88,7 +88,7 @@ var command = &cobra.Command{
 			MaxAge:           12 * time.Hour,
 		}))
 
-		fmt.Println("helloss")
+		fmt.Println("hellosss")
 
 		// lmt := tollbooth.NewLimiter(
 		// 	config.Config.RateLimiterMaxRequests,
